@@ -1,5 +1,5 @@
 import { Canvas,useLoader } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations, Environment, ContactShadows, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF, useAnimations, Environment, ContactShadows, Html, Bounds } from '@react-three/drei';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { RotatingLines } from 'react-loader-spinner';
 import * as THREE from 'three';
@@ -225,14 +225,15 @@ export default function ModelViewer({ modelUrl, config }) {
       </div>
     </Html>}>
           <Environment preset={config.backgroundScene} background />
-          
-          {modelUrl && (
-            <Model 
-              url={modelUrl} 
-              config={config} 
-              onModelLoaded={handleModelLoaded} 
-            />
-          )}
+          <Bounds fit clip observe margin={1.2} maxDuration={1} >
+            {modelUrl && (
+              <Model 
+                url={modelUrl} 
+                config={config} 
+                onModelLoaded={handleModelLoaded} 
+              />
+            )}
+          </Bounds> 
           
           {/* Improved Base Plane */}
           <mesh
