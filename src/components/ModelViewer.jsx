@@ -744,12 +744,12 @@ function ModelUploader({ onModelUploaded, isUploading, setIsUploading }) {
       setUploadProgress(100);
       
       // Generate public URL for the file
-      const fileUrl = storage.getFileView('67ec002100025524dd4b', result.$id);
-      
-      console.log('File uploaded successfully:', fileUrl);
-      
-      // Pass the URL back to the parent component
-      onModelUploaded(fileUrl);
+      const fileUrl = storage.getFileDownload('67ec002100025524dd4b', result.$id);
+
+console.log('File uploaded successfully:', fileUrl);
+
+// Pass both the URL and the file ID back to the parent component
+onModelUploaded(fileUrl, result.$id);
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -1031,12 +1031,20 @@ function ARView({ modelUrl, visible, onClose, modelId }) {
   const [shareLink, setShareLink] = useState('');
 
   useEffect(() => {
-    if (visible && modelUrl) {
-      // Generate a URL for AR viewing with the appwrite model ID
+    if (visible && modelUrl && modelId) {
+      // Create a direct download URL that doesn't require authentication
+      const directModelUrl = storage.getFileDownload('67ec002100025524dd4b', modelId);
+      
+      // Generate a URL for AR viewing with the direct download URL
       const baseUrl = window.location.origin;
-      const fullUrl = `${baseUrl}/ar-view.html?modelId=${encodeURIComponent(modelId || '')}&modelUrl=${encodeURIComponent(modelUrl)}`;
+      const fullUrl = `${baseUrl}/ar-view.html?modelUrl=${encodeURIComponent(directModelUrl)}`;
       setArUrl(fullUrl);
       setShareLink(fullUrl);
+      
+      // If using model-viewer web component, directly set the source
+      if (modelViewerRef.current) {
+        modelViewerRef.current.src = directModelUrl;
+      }
     }
   }, [visible, modelUrl, modelId]);
 
@@ -1195,6 +1203,7 @@ export default function ModelViewer({ modelUrl, config }) {
   const handleModelUploaded = (url, id) => {
     setUploadedModelUrl(url);
     setModelId(id);
+    console.log("Model uploaded with ID:", id);
   };
 
   // Function to handle screenshot capture

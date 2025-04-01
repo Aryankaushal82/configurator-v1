@@ -191,99 +191,85 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const modelUrl = urlParams.get('modelUrl');
+      
       const modelViewer = document.getElementById('model-viewer');
-      const loading = document.getElementById('loading');
+      const loadingElement = document.getElementById('loading');
       const errorOverlay = document.getElementById('error-overlay');
       const errorMessage = document.getElementById('error-message');
       
-      // Get model URL from query parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const modelUrl = urlParams.get('model');
-      
-      if (!modelUrl) {
-        showError('No model URL provided');
-        return;
-      }
-
-      // Set model src
-      modelViewer.src = decodeURIComponent(modelUrl);
-      
-      // Setup controls
+      // Set up scale and rotation controls
       const scaleUp = document.getElementById('scale-up');
       const scaleDown = document.getElementById('scale-down');
       const rotateLeft = document.getElementById('rotate-left');
       const rotateRight = document.getElementById('rotate-right');
       
-      // Current scale and rotation values
       let currentScale = 1.0;
       const scaleStep = 0.1;
-      const rotationStep = 15; // degrees
       
-      // Scale controls
       scaleUp.addEventListener('click', () => {
         currentScale += scaleStep;
-        updateScale();
+        modelViewer.scale = `${currentScale} ${currentScale} ${currentScale}`;
       });
       
       scaleDown.addEventListener('click', () => {
-        if (currentScale > scaleStep) {
-          currentScale -= scaleStep;
-          updateScale();
-        }
+        currentScale = Math.max(0.1, currentScale - scaleStep);
+        modelViewer.scale = `${currentScale} ${currentScale} ${currentScale}`;
       });
       
-      // Rotation controls
+      let currentRotation = 0;
+      const rotationStep = 15;
+      
       rotateLeft.addEventListener('click', () => {
-        modelViewer.orientation = getNextOrientation(-rotationStep);
+        currentRotation -= rotationStep;
+        modelViewer.orientation = `0deg ${currentRotation}deg 0deg`;
       });
       
       rotateRight.addEventListener('click', () => {
-        modelViewer.orientation = getNextOrientation(rotationStep);
+        currentRotation += rotationStep;
+        modelViewer.orientation = `0deg ${currentRotation}deg 0deg`;
       });
       
-      function updateScale() {
-        // Update model-viewer scale
-        modelViewer.scale = `${currentScale} ${currentScale} ${currentScale}`;
-      }
-      
-      function getNextOrientation(degrees) {
-        // Get current orientation as quaternion
-        const orientation = modelViewer.orientation;
-        // Convert to Euler angles, add rotation, convert back to quaternion
-        const euler = new DOMPoint();
-        euler.y = degrees * (Math.PI / 180); // Convert degrees to radians
-        return orientation + ' ' + euler.y;
-      }
-      
-      // Events
-      modelViewer.addEventListener('load', () => {
-        loading.style.display = 'none';
-      });
-      
-      modelViewer.addEventListener('error', (error) => {
-        showError(`Error loading model: ${error.detail.type}`);
-      });
-      
-      function showError(message) {
-        loading.style.display = 'none';
-        errorMessage.textContent = message;
+      if (modelUrl) {
+        console.log("Attempting to load model:", modelUrl);
+        
+        // Add a timeout to detect if loading takes too long
+        const loadingTimeout = setTimeout(() => {
+          if (loadingElement.style.display !== 'none') {
+            errorMessage.textContent = "Loading timed out. The model might be too large or the URL might be incorrect.";
+            loadingElement.style.display = 'none';
+            errorOverlay.style.display = 'flex';
+          }
+        }, 30000);  // 30 second timeout
+        
+        // Set the model URL
+        modelViewer.src = modelUrl;
+        
+        // Model has loaded successfully
+        modelViewer.addEventListener('load', () => {
+          console.log("Model loaded successfully");
+          clearTimeout(loadingTimeout);
+          loadingElement.style.display = 'none';
+        });
+        
+        // Model failed to load
+        modelViewer.addEventListener('error', (event) => {
+          console.error("Error loading model:", event);
+          clearTimeout(loadingTimeout);
+          errorMessage.textContent = "Failed to load the 3D model. Please check the URL and try again.";
+          loadingElement.style.display = 'none';
+          errorOverlay.style.display = 'flex';
+        });
+      } else {
+        console.error("No model URL provided");
+        errorMessage.textContent = "No model URL was provided in the page parameters.";
+        loadingElement.style.display = 'none';
         errorOverlay.style.display = 'flex';
       }
-
-      // Handle AR mode entry and exit
-      modelViewer.addEventListener('ar-status', (event) => {
-        if (event.detail.status === 'session-started') {
-          // AR mode has started
-          document.querySelector('.controls').style.display = 'flex';
-        } else if (event.detail.status === 'session-ended') {
-          // AR mode has ended
-          currentScale = 1.0;
-          updateScale();
-        }
-      });
     });
   </script>
 </body>
 </html>
-
