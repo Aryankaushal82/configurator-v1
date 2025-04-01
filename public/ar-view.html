@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Model AR View</title>
+  
+  <!-- Import model-viewer component -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background-color: #f0f0f0;
+      --poster-color: transparent;
+    }
+
+    .ar-button {
+      background-color: #4285f4;
+      color: white;
+      border-radius: 4px;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 500;
+      margin: 0 auto;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .scale-controls, .rotation-controls {
+      display: flex;
+      align-items: center;
+    }
+
+    .control-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      margin: 0 5px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:active {
+      background-color: #f0f0f0;
+    }
+
+    .label {
+      font-size: 12px;
+      margin-right: 5px;
+      color: #333;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      z-index: 2000;
+    }
+
+    .overlay button {
+      background-color: white;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      margin-top: 16px;
+      cursor: pointer;
+    }
+
+    .loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 255, 255, 0.9);
+      z-index: 1500;
+    }
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #4285f4;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading 3D model...</p>
+    </div>
+
+    <model-viewer
+      id="model-viewer"
+      camera-controls
+      auto-rotate
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      ar-placement="floor"
+      shadow-intensity="1"
+      environment-image="neutral"
+      exposure="0.5"
+      interaction-prompt="auto"
+      touch-action="pan-y"
+    >
+      <button slot="ar-button" class="ar-button">
+        View in AR
+      </button>
+
+      <div id="error-overlay" class="overlay" style="display: none;">
+        <h2>Failed to load model</h2>
+        <p id="error-message">There was a problem loading the 3D model.</p>
+        <button onclick="location.reload()">Retry</button>
+      </div>
+    </model-viewer>
+
+    <div class="controls">
+      <div class="scale-controls">
+        <span class="label">Scale</span>
+        <button class="control-btn" id="scale-down">-</button>
+        <button class="control-btn" id="scale-up">+</button>
+      </div>
+      
+      <div class="rotation-controls">
+        <span class="label">Rotate</span>
+        <button class="control-btn" id="rotate-left">↺</button>
+        <button class="control-btn" id="rotate-right">↻</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modelViewer = document.getElementById('model-viewer');
+      const loading = document.getElementById('loading');
+      const errorOverlay = document.getElementById('error-overlay');
+      const errorMessage = document.getElementById('error-message');
+      
+      // Get model URL from query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const modelUrl = urlParams.get('model');
+      
+      if (!modelUrl) {
+        showError('No model URL provided');
+        return;
+      }
+
+      // Set model src
+      modelViewer.src = decodeURIComponent(modelUrl);
+      
+      // Setup controls
+      const scaleUp = document.getElementById('scale-up');
+      const scaleDown = document.getElementById('scale-down');
+      const rotateLeft = document.getElementById('rotate-left');
+      const rotateRight = document.getElementById('rotate-right');
+      
+      // Current scale and rotation values
+      let currentScale = 1.0;
+      const scaleStep = 0.1;
+      const rotationStep = 15; // degrees
+      
+      // Scale controls
+      scaleUp.addEventListener('click', () => {
+        currentScale += scaleStep;
+        updateScale();
+      });
+      
+      scaleDown.addEventListener('click', () => {
+        if (currentScale > scaleStep) {
+          currentScale -= scaleStep;
+          updateScale();
+        }
+      });
+      
+      // Rotation controls
+      rotateLeft.addEventListener('click', () => {
+        modelViewer.orientation = getNextOrientation(-rotationStep);
+      });
+      
+      rotateRight.addEventListener('click', () => {
+        modelViewer.orientation = getNextOrientation(rotationStep);
+      });
+      
+      function updateScale() {
+        // Update model-viewer scale
+        modelViewer.scale = `${currentScale} ${currentScale} ${currentScale}`;
+      }
+      
+      function getNextOrientation(degrees) {
+        // Get current orientation as quaternion
+        const orientation = modelViewer.orientation;
+        // Convert to Euler angles, add rotation, convert back to quaternion
+        const euler = new DOMPoint();
+        euler.y = degrees * (Math.PI / 180); // Convert degrees to radians
+        return orientation + ' ' + euler.y;
+      }
+      
+      // Events
+      modelViewer.addEventListener('load', () => {
+        loading.style.display = 'none';
+      });
+      
+      modelViewer.addEventListener('error', (error) => {
+        showError(`Error loading model: ${error.detail.type}`);
+      });
+      
+      function showError(message) {
+        loading.style.display = 'none';
+        errorMessage.textContent = message;
+        errorOverlay.style.display = 'flex';
+      }
+
+      // Handle AR mode entry and exit
+      modelViewer.addEventListener('ar-status', (event) => {
+        if (event.detail.status === 'session-started') {
+          // AR mode has started
+          document.querySelector('.controls').style.display = 'flex';
+        } else if (event.detail.status === 'session-ended') {
+          // AR mode has ended
+          currentScale = 1.0;
+          updateScale();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
