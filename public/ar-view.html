@@ -9,6 +9,13 @@
   <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
   
   <style>
+    :root {
+      --primary-orange: #FF6B00;
+      --light-orange: rgba(255, 107, 0, 0.1);
+      --white: #FFFFFF;
+      --text-dark: #333333;
+    }
+
     body {
       margin: 0;
       padding: 0;
@@ -16,6 +23,8 @@
       height: 100vh;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--white);
+      color: var(--text-dark);
     }
 
     .container {
@@ -23,40 +32,70 @@
       height: 100%;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
 
     model-viewer {
       width: 100%;
       height: 100%;
-      background-color: #f0f0f0;
+      background-color: var(--white);
       --poster-color: transparent;
     }
 
     .ar-button {
-      background-color: #4285f4;
-      color: white;
-      border-radius: 4px;
+      background-color: var(--primary-orange);
+      color: var(--white);
+      border-radius: 24px;
       border: none;
-      padding: 8px 16px;
-      font-weight: 500;
+      padding: 12px 24px;
+      font-weight: 600;
       margin: 0 auto;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      box-shadow: 0 4px 8px rgba(255, 107, 0, 0.3);
+    }
+
+    .ar-button:hover {
+      background-color: #e05e00;
+      transform: translateY(-2px);
+    }
+
+    .ar-button:active {
+      transform: translateY(0);
     }
 
     .controls {
       position: absolute;
-      bottom: 16px;
-      left: 16px;
-      right: 16px;
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 8px;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 16px;
+      background-color: var(--white);
+      border-radius: 12px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      max-width: 90%;
+      width: auto;
+      gap: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .controls {
+        flex-direction: column;
+        gap: 16px;
+        padding: 12px;
+      }
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .scale-controls, .rotation-controls {
@@ -65,28 +104,38 @@
     }
 
     .control-btn {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       border: none;
-      background-color: #fff;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-      margin: 0 5px;
-      font-size: 18px;
+      background-color: var(--white);
+      color: var(--primary-orange);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin: 0 8px;
+      font-size: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      background-color: var(--light-orange);
+      transform: scale(1.1);
     }
 
     .control-btn:active {
-      background-color: #f0f0f0;
+      transform: scale(0.95);
     }
 
     .label {
-      font-size: 12px;
-      margin-right: 5px;
-      color: #333;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--primary-orange);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .overlay {
@@ -99,19 +148,33 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background-color: rgba(0, 0, 0, 0.5);
-      color: white;
+      background-color: rgba(255, 255, 255, 0.95);
+      color: var(--text-dark);
       z-index: 2000;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .overlay h2 {
+      color: var(--primary-orange);
+      margin-bottom: 16px;
     }
 
     .overlay button {
-      background-color: white;
-      color: black;
+      background-color: var(--primary-orange);
+      color: var(--white);
       border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      margin-top: 16px;
+      border-radius: 24px;
+      padding: 12px 24px;
+      margin-top: 24px;
       cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .overlay button:hover {
+      background-color: #e05e00;
+      transform: translateY(-2px);
     }
 
     .loading {
@@ -124,30 +187,142 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: var(--white);
       z-index: 1500;
     }
 
     .spinner {
-      border: 4px solid rgba(0, 0, 0, 0.1);
-      width: 36px;
-      height: 36px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      border-left-color: #4285f4;
-      animation: spin 1s linear infinite;
+      position: relative;
+      animation: rotate 1s linear infinite;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
+    .spinner::before {
+      content: "";
+      box-sizing: border-box;
+      position: absolute;
+      inset: 0px;
+      border-radius: 50%;
+      border: 5px solid var(--primary-orange);
+      animation: prixClipFix 2s linear infinite;
+    }
+
+    @keyframes rotate {
       100% { transform: rotate(360deg); }
+    }
+
+    @keyframes prixClipFix {
+      0% { clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0); }
+      25% { clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0); }
+      50% { clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%); }
+      75% { clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%); }
+      100% { clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0); }
+    }
+
+    .loading p {
+      margin-top: 16px;
+      color: var(--primary-orange);
+      font-weight: 500;
+    }
+
+    /* Header */
+    .header {
+      background-color: var(--primary-orange);
+      color: var(--white);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--white);
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+    }
+
+    /* Progress indicator */
+    .model-progress {
+      position: absolute;
+      bottom: 90px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background-color: rgba(255, 255, 255, 0.3);
+      z-index: 900;
+      visibility: hidden;
+    }
+
+    .model-progress-bar {
+      height: 100%;
+      background-color: var(--primary-orange);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Quality switcher */
+    .quality-switch {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 8px;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .quality-switch select {
+      border: 1px solid #e0e0e0;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background-color: var(--white);
+      color: var(--text-dark);
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>3D Model Viewer</h1>
+      <div style="width: 24px;"></div> <!-- Spacer for alignment -->
+    </div>
+
     <div id="loading" class="loading">
       <div class="spinner"></div>
       <p>Loading 3D model...</p>
+    </div>
+
+    <div class="model-progress" id="model-progress">
+      <div class="model-progress-bar" id="model-progress-bar"></div>
+    </div>
+
+    <div class="quality-switch">
+      <select id="quality-selector">
+        <option value="high">High Quality</option>
+        <option value="medium" selected>Medium Quality</option>
+        <option value="low">Low Quality</option>
+      </select>
     </div>
 
     <model-viewer
@@ -176,16 +351,27 @@
     </model-viewer>
 
     <div class="controls">
-      <div class="scale-controls">
+      <div class="control-group">
         <span class="label">Scale</span>
-        <button class="control-btn" id="scale-down">-</button>
-        <button class="control-btn" id="scale-up">+</button>
+        <div class="scale-controls">
+          <button class="control-btn" id="scale-down">−</button>
+          <button class="control-btn" id="scale-up">+</button>
+        </div>
       </div>
       
-      <div class="rotation-controls">
+      <div class="control-group">
         <span class="label">Rotate</span>
-        <button class="control-btn" id="rotate-left">↺</button>
-        <button class="control-btn" id="rotate-right">↻</button>
+        <div class="rotation-controls">
+          <button class="control-btn" id="rotate-left">↺</button>
+          <button class="control-btn" id="rotate-right">↻</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="label">Reset</span>
+        <div class="reset-controls">
+          <button class="control-btn" id="reset-view">⟳</button>
+        </div>
       </div>
     </div>
   </div>
@@ -200,19 +386,23 @@
       const loadingElement = document.getElementById('loading');
       const errorOverlay = document.getElementById('error-overlay');
       const errorMessage = document.getElementById('error-message');
+      const progressElement = document.getElementById('model-progress');
+      const progressBarElement = document.getElementById('model-progress-bar');
+      const qualitySelector = document.getElementById('quality-selector');
       
       // Set up scale and rotation controls
       const scaleUp = document.getElementById('scale-up');
       const scaleDown = document.getElementById('scale-down');
       const rotateLeft = document.getElementById('rotate-left');
       const rotateRight = document.getElementById('rotate-right');
+      const resetView = document.getElementById('reset-view');
       
       let currentScale = 1.0;
       const scaleStep = 0.1;
       
       scaleUp.addEventListener('click', () => {
         currentScale += scaleStep;
-        modelViewer.scale = `${currentScale} ${currentScale} ${currentScale}`;
+        modelViewer.scale =` ${currentScale} ${currentScale} ${currentScale}`;
       });
       
       scaleDown.addEventListener('click', () => {
@@ -231,6 +421,46 @@
       rotateRight.addEventListener('click', () => {
         currentRotation += rotationStep;
         modelViewer.orientation = `0deg ${currentRotation}deg 0deg`;
+      });
+
+      resetView.addEventListener('click', () => {
+        currentScale = 1.0;
+        currentRotation = 0;
+        modelViewer.scale = `1 1 1`;
+        modelViewer.orientation = `0deg 0deg 0deg`;
+        modelViewer.resetTurntableRotation();
+        modelViewer.cameraOrbit = "0deg 75deg 105%";
+      });
+
+      // Quality selector
+      qualitySelector.addEventListener('change', () => {
+        switch(qualitySelector.value) {
+          case 'high':
+            modelViewer.exposure = 0.7;
+            modelViewer.shadowIntensity = 1.2;
+            modelViewer.environmentIntensity = 1.2;
+            break;
+          case 'medium':
+            modelViewer.exposure = 0.5;
+            modelViewer.shadowIntensity = 1;
+            modelViewer.environmentIntensity = 1;
+            break;
+          case 'low':
+            modelViewer.exposure = 0.3;
+            modelViewer.shadowIntensity = 0.5;
+            modelViewer.environmentIntensity = 0.7;
+            break;
+        }
+      });
+      
+      // Progress tracking
+      modelViewer.addEventListener('progress', (event) => {
+        if (event.detail.totalProgress === 1) {
+          progressElement.style.visibility = 'hidden';
+        } else {
+          progressElement.style.visibility = 'visible';
+          progressBarElement.style.width = `${event.detail.totalProgress * 100}%`;
+        }
       });
       
       if (modelUrl) {
@@ -253,6 +483,14 @@
           console.log("Model loaded successfully");
           clearTimeout(loadingTimeout);
           loadingElement.style.display = 'none';
+          
+          // Add slight camera animation for a more engaging initial view
+          setTimeout(() => {
+            modelViewer.cameraOrbit = "10deg 75deg 105%";
+            setTimeout(() => {
+              modelViewer.cameraOrbit = "0deg 75deg 105%";
+            }, 1500);
+          }, 500);
         });
         
         // Model failed to load
@@ -269,6 +507,11 @@
         loadingElement.style.display = 'none';
         errorOverlay.style.display = 'flex';
       }
+      
+      // Make the viewer responsive to screen size changes
+      window.addEventListener('resize', () => {
+        modelViewer.dismissPoster();
+      });
     });
   </script>
 </body>
